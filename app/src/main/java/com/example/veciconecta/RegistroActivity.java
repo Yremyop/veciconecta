@@ -8,7 +8,7 @@ import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONException;
@@ -53,12 +53,26 @@ public class RegistroActivity extends AppCompatActivity {
             return;
         }
 
-        StringRequest request = new StringRequest(Request.Method.POST, URL,
+        // Crear objeto JSON con los datos
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("usuario", usuario);
+            jsonBody.put("password", password);
+            jsonBody.put("nombre", nombre);
+            jsonBody.put("apellidoPat", apellidoPat);
+            jsonBody.put("apellidoMat", apellidoMat);
+            jsonBody.put("ci", ci);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, URL,
+                jsonBody,
                 response -> {
                     try {
-                        JSONObject json = new JSONObject(response);
-                        boolean success = json.getBoolean("success");
-                        String message = json.getString("message");
+                        boolean success = response.getBoolean("success");
+                        String message = response.getString("message");
 
                         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
 
@@ -72,17 +86,12 @@ public class RegistroActivity extends AppCompatActivity {
                     }
                 },
                 error -> Toast.makeText(this, "Error de conexión con el servidor", Toast.LENGTH_SHORT).show()
-        ){
+        ) {
             @Override
-            protected Map<String, String> getParams(){
-                Map<String, String> params = new HashMap<>();
-                params.put("usuario", usuario);
-                params.put("password", password);
-                params.put("nombre", nombre);
-                params.put("apellidoPat", apellidoPat);
-                params.put("apellidoMat", apellidoMat);
-                params.put("ci", ci);
-                return params;
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                return headers;
             }
         };
 
