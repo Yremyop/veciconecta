@@ -85,7 +85,15 @@ public class RegistroActivity extends AppCompatActivity {
                         Toast.makeText(this, "Error en respuesta del servidor", Toast.LENGTH_SHORT).show();
                     }
                 },
-                error -> Toast.makeText(this, "Error de conexión con el servidor", Toast.LENGTH_SHORT).show()
+                error -> {
+                    String errorMessage = "Error: ";
+                    if (error.networkResponse != null) {
+                        errorMessage += " Código: " + error.networkResponse.statusCode;
+                    }
+                    errorMessage += " " + error.getMessage();
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
+                    error.printStackTrace(); // Para ver el error en el logcat
+                }
         ) {
             @Override
             public Map<String, String> getHeaders() {
