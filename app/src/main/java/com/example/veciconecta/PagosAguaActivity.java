@@ -41,6 +41,11 @@ public class PagosAguaActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pagos_agua);
 
+        // Configurar botón de volver
+        findViewById(R.id.btnVolver).setOnClickListener(v -> {
+            finish(); // Esto cerrará la actividad y volverá al menú principal
+        });
+
         lvPagosAgua = findViewById(R.id.lvPagosAgua);
         btnPagarTodo = findViewById(R.id.btnPagarTodo);
         listaPagosAgua = new ArrayList<>();

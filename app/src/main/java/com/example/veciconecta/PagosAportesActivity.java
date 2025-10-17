@@ -40,6 +40,11 @@ public class PagosAportesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pagos_aportes);
 
+        // Configurar botón de volver
+        findViewById(R.id.btnVolver).setOnClickListener(v -> {
+            finish(); // Esto cerrará la actividad y volverá al menú principal
+        });
+
         lvAportes = findViewById(R.id.lvAportes);
         btnPagarTodo = findViewById(R.id.btnPagarTodo);
         listaAportes = new ArrayList<>();

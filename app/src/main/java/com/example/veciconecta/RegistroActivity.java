@@ -29,6 +29,11 @@ public class RegistroActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_registro);
 
+        // Configurar botón de volver
+        findViewById(R.id.btnVolver).setOnClickListener(v -> {
+            finish(); // Esto cerrará la actividad y volverá al login
+        });
+
         etUsuarioRegistro = findViewById(R.id.etUsuarioRegistro);
         etPasswordRegistro = findViewById(R.id.etPasswordRegistro);
         etNombre = findViewById(R.id.etNombre);

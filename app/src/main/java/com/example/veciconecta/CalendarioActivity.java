@@ -40,6 +40,11 @@ public class CalendarioActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calendario);
 
+        // Inicializar el botón de volver
+        findViewById(R.id.btnVolver).setOnClickListener(v -> {
+            finish(); // Esto cerrará la actividad y volverá al menú principal
+        });
+
         listaNoticias = findViewById(R.id.listaNoticias);
         listaEventos = new ArrayList<>();
         requestQueue = Volley.newRequestQueue(this);

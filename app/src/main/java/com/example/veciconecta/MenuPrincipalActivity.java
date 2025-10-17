@@ -15,6 +15,15 @@ public class MenuPrincipalActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu_principal);
 
+        // Configurar botón de volver al login (cerrar sesión)
+        findViewById(R.id.btnVolver).setOnClickListener(v -> {
+            // Crear un intent para volver a LoginActivity y limpiar la pila de actividades
+            Intent intent = new Intent(MenuPrincipalActivity.this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+
         btnPagosAportes = findViewById(R.id.btnPagosAportes);
         btnPagosAgua = findViewById(R.id.btnPagosAgua);
         btnCalendario = findViewById(R.id.btnCalendario);
