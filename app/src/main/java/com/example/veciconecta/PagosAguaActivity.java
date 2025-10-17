@@ -108,8 +108,12 @@ public class PagosAguaActivity extends AppCompatActivity {
     private void realizarPago(int pagoId) {
         JSONObject jsonBody = new JSONObject();
         try {
+            // Aseguramos que el body tenga exactamente el formato requerido
             jsonBody.put("id", pagoId);
-            jsonBody.put("pagado", true);
+            jsonBody.put("pagado", true);  // enviamos true como booleano
+            
+            // Log para debug
+            Toast.makeText(this, "Enviando pago: " + jsonBody.toString(), Toast.LENGTH_SHORT).show();
         } catch (JSONException e) {
             e.printStackTrace();
             return;
@@ -164,8 +168,12 @@ public class PagosAguaActivity extends AppCompatActivity {
         for (JSONObject pago : listaPagosAgua) {
             try {
                 JSONObject jsonBody = new JSONObject();
+                // Aseguramos que el body tenga exactamente el formato requerido
                 jsonBody.put("id", pago.getInt("id"));
-                jsonBody.put("pagado", true);
+                jsonBody.put("pagado", true);  // enviamos true como booleano
+                
+                // Log para debug
+                Toast.makeText(this, "Enviando pago múltiple: " + jsonBody.toString(), Toast.LENGTH_SHORT).show();
 
                 JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, URL_BASE, jsonBody,
                         response -> {

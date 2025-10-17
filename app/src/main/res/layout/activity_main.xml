@@ -12,12 +12,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="40dp"
-        android:text="Bienvenido a VeciConecta"
+        android:text="Bienvenid@"
         android:textColor="#000"
         android:textSize="24sp"
         android:textStyle="bold"
         android:gravity="center"/>
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="281dp"
+        android:layout_marginBottom="10dp"
+        android:src="@drawable/veciconecta" />
     <Button
         android:id="@+id/btnIrLogin"
         android:layout_width="match_parent"

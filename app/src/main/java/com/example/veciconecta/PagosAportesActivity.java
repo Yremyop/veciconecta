@@ -14,7 +14,6 @@ import android.widget.Toast;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
@@ -28,10 +27,11 @@ import java.util.Map;
 public class PagosAportesActivity extends AppCompatActivity {
 
     ListView lvAportes;
+    Button btnPagarTodo;
     ArrayList<JSONObject> listaAportes;
     int usuarioId;
-    String URL_APORTES = Config.BASE_URL + "/aportes_multas.php";
-    String URL_PAGAR = Config.BASE_URL + "/pagar_aporte.php";
+    String URL_APORTES = Config.BASE_URL + "/pagos_aportes.php";
+    String URL_PAGAR = Config.BASE_URL + "/pagos_aportes.php";
     RequestQueue requestQueue;
     AportesAdapter adapter;
 
@@ -41,8 +41,11 @@ public class PagosAportesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_pagos_aportes);
 
         lvAportes = findViewById(R.id.lvAportes);
+        btnPagarTodo = findViewById(R.id.btnPagarTodo);
         listaAportes = new ArrayList<>();
         requestQueue = Volley.newRequestQueue(this);
+
+        btnPagarTodo.setOnClickListener(v -> pagarTodasLasDeudas());
 
         // Recuperar usuario_id del Intent
         usuarioId = getIntent().getIntExtra("usuario_id", 0);
@@ -57,26 +60,41 @@ public class PagosAportesActivity extends AppCompatActivity {
     private void cargarAportes() {
         String urlFinal = URL_APORTES + "?usuario_id=" + usuarioId;
 
-        StringRequest request = new StringRequest(Request.Method.GET, urlFinal,
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, urlFinal, null,
                 response -> {
                     try {
-                        JSONArray jsonArray = new JSONArray(response);
-                        listaAportes.clear();
+                        boolean success = response.getBoolean("success");
+                        if (success) {
+                            JSONArray jsonArray = response.getJSONArray("data");
+                            listaAportes.clear();
+                            double deudaTotal = 0;
 
-                        for(int i = 0; i < jsonArray.length(); i++){
-                            JSONObject obj = jsonArray.getJSONObject(i);
-                            listaAportes.add(obj);
+                            for(int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject obj = jsonArray.getJSONObject(i);
+                                if (obj.getInt("pagado") == 0) {
+                                    listaAportes.add(obj);
+                                    deudaTotal += obj.getDouble("monto");
+                                }
+                            }
+
+                            adapter.notifyDataSetChanged();
+                        } else {
+                            Toast.makeText(PagosAportesActivity.this, "Error al obtener los datos", Toast.LENGTH_SHORT).show();
                         }
-
-                        adapter.notifyDataSetChanged();
-
-                    } catch (JSONException e){
+                    } catch (JSONException e) {
                         e.printStackTrace();
-                        Toast.makeText(this, "Error al procesar datos", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(PagosAportesActivity.this, "Error al procesar datos", Toast.LENGTH_SHORT).show();
                     }
                 },
-                error -> Toast.makeText(this, "Error de conexión con el servidor", Toast.LENGTH_SHORT).show()
-        );
+                error -> Toast.makeText(PagosAportesActivity.this, "Error de conexión con el servidor", Toast.LENGTH_SHORT).show()
+        ) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                return headers;
+            }
+        };
 
         requestQueue.add(request);
     }
@@ -84,14 +102,18 @@ public class PagosAportesActivity extends AppCompatActivity {
     private void realizarPago(int aporteId) {
         JSONObject jsonBody = new JSONObject();
         try {
-            jsonBody.put("aporte_id", aporteId);
-            jsonBody.put("usuario_id", usuarioId);
+            // Aseguramos que el body tenga exactamente el formato requerido
+            jsonBody.put("id", aporteId);
+            jsonBody.put("pagado", true);
+            
+            // Log para debug
+            Toast.makeText(this, "Enviando pago: " + jsonBody.toString(), Toast.LENGTH_SHORT).show();
         } catch (JSONException e) {
             e.printStackTrace();
             return;
         }
 
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, URL_PAGAR, jsonBody,
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, URL_APORTES, jsonBody,
                 response -> {
                     try {
                         boolean success = response.getBoolean("success");
@@ -123,6 +145,66 @@ public class PagosAportesActivity extends AppCompatActivity {
         };
 
         requestQueue.add(request);
+    }
+
+    private void pagarTodasLasDeudas() {
+        final int[] pagosCompletados = {0};
+        final int totalPagos = listaAportes.size();
+
+        if (totalPagos == 0) {
+            Toast.makeText(this, "No hay aportes pendientes", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Deshabilitar el botón mientras se procesan los pagos
+        btnPagarTodo.setEnabled(false);
+        
+        for (JSONObject aporte : listaAportes) {
+            try {
+                JSONObject jsonBody = new JSONObject();
+                jsonBody.put("id", aporte.getInt("id"));
+                jsonBody.put("pagado", true);
+
+                // Log para debug
+                Toast.makeText(this, "Enviando pago múltiple: " + jsonBody.toString(), Toast.LENGTH_SHORT).show();
+
+                JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, URL_APORTES, jsonBody,
+                        response -> {
+                            try {
+                                if (response.getBoolean("success")) {
+                                    pagosCompletados[0]++;
+                                    // Verificar si todos los pagos están completos
+                                    if (pagosCompletados[0] == totalPagos) {
+                                        Toast.makeText(this, "Todos los aportes procesados exitosamente", Toast.LENGTH_SHORT).show();
+                                        cargarAportes();
+                                        btnPagarTodo.setEnabled(true);
+                                    }
+                                }
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                                btnPagarTodo.setEnabled(true);
+                            }
+                        },
+                        error -> {
+                            Toast.makeText(this, "Error en uno de los pagos", Toast.LENGTH_SHORT).show();
+                            btnPagarTodo.setEnabled(true);
+                        }
+                ) {
+                    @Override
+                    public Map<String, String> getHeaders() {
+                        Map<String, String> headers = new HashMap<>();
+                        headers.put("Content-Type", "application/json");
+                        return headers;
+                    }
+                };
+
+                requestQueue.add(request);
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+                btnPagarTodo.setEnabled(true);
+            }
+        }
     }
 
     private class AportesAdapter extends BaseAdapter {
@@ -162,14 +244,14 @@ public class PagosAportesActivity extends AppCompatActivity {
                 tvConcepto.setText(aporte.getString("descripcion"));
                 tvMonto.setText(String.format("Bs. %.2f", aporte.getDouble("monto")));
                 
-                boolean pagado = aporte.getBoolean("pagado");
-                tvEstado.setText(pagado ? "✅ PAGADO" : "❌ PENDIENTE");
+                int pagado = aporte.getInt("pagado");
+                tvEstado.setText(pagado == 1 ? "✅ PAGADO" : "❌ PENDIENTE");
                 tvEstado.setTextColor(getResources().getColor(
-                    pagado ? android.R.color.holo_green_dark : android.R.color.holo_red_dark
+                    pagado == 1 ? android.R.color.holo_green_dark : android.R.color.holo_red_dark
                 ));
 
                 // Mostrar botón de pagar solo si no está pagado
-                if (!pagado) {
+                if (pagado == 0) {
                     btnPagar.setVisibility(View.VISIBLE);
                     btnPagar.setOnClickListener(v -> realizarPago(aporte.optInt("id")));
                 } else {

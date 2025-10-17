@@ -17,6 +17,12 @@
         android:gravity="center"
         android:layout_marginBottom="40dp"/>
 
+    <ImageView
+        android:layout_width="298dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:src="@drawable/user" />
+
     <Button
         android:id="@+id/btnPagosAportes"
         android:layout_width="match_parent"
