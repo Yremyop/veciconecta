@@ -10,7 +10,7 @@ import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONException;
@@ -52,19 +52,29 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        StringRequest request = new StringRequest(Request.Method.POST, URL,
+        // Crear objeto JSON con los datos
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("usuario", usuario);
+            jsonBody.put("password", password);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, URL,
+                jsonBody,
                 response -> {
                     try {
-                        JSONObject json = new JSONObject(response);
-                        boolean success = json.getBoolean("success");
-                        String message = json.getString("message");
+                        boolean success = response.getBoolean("success");
+                        String message = response.getString("message");
 
                         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
 
                         if(success){
                             Intent intent = new Intent(LoginActivity.this, MenuPrincipalActivity.class);
                             // opcional: enviar datos de usuario
-                            intent.putExtra("usuario_id", json.getJSONObject("usuario").getInt("id"));
+                            intent.putExtra("usuario_id", response.getJSONObject("usuario").getInt("id"));
                             startActivity(intent);
                             finish();
                         }
@@ -74,14 +84,21 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(this, "Error en respuesta del servidor", Toast.LENGTH_SHORT).show();
                     }
                 },
-                error -> Toast.makeText(this, "Error de conexión con el servidor", Toast.LENGTH_SHORT).show()
-        ){
+                error -> {
+                    String errorMessage = "Error: ";
+                    if (error.networkResponse != null) {
+                        errorMessage += " Código: " + error.networkResponse.statusCode;
+                    }
+                    errorMessage += " " + error.getMessage();
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
+                    error.printStackTrace();
+                }
+        ) {
             @Override
-            protected Map<String, String> getParams(){
-                Map<String, String> params = new HashMap<>();
-                params.put("usuario", usuario);
-                params.put("password", password);
-                return params;
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                return headers;
             }
         };
 
